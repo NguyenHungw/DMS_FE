@@ -1,0 +1,89 @@
+@use '../variables' as *;
+
+.sharing-container {
+    .sharing-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+
+        h3 {
+            margin: 0;
+        }
+    }
+
+    .pinned-section {
+        margin-bottom: 32px;
+
+        .pinned-card {
+            background: linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%);
+            border: 1px solid #91d5ff;
+            border-radius: 12px;
+
+            .pinned-label {
+                background: #1890ff;
+                color: #fff;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: bold;
+                margin-right: 8px;
+            }
+        }
+    }
+
+    .sharing-tabs {
+        .ant-tabs-nav {
+            margin-bottom: 24px;
+        }
+    }
+
+    .announcement-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: transform 0.3s, box-shadow 0.3s;
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .author-info {
+                font-size: 12px;
+            }
+
+            .date-info {
+                font-size: 12px;
+            }
+        }
+    }
+}
+
+.announcement-detail-modal {
+    .comment-section {
+        margin-top: 32px;
+
+        .comment-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+        }
+
+        .comment-input-area {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+    }
+}
+
+.announcement-modal-form {
+    .submit-button {
+        width: 100%;
+    }
+}

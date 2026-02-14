@@ -1,0 +1,50 @@
+@use '../variables' as *;
+
+.dashboard-container {
+    padding: 20px;
+
+    .dashboard-title {
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+        .stat-trend {
+            margin-top: 8px;
+
+            .trend-text {
+                font-size: 12px;
+            }
+        }
+    }
+
+    .activity-card {
+        border-radius: 12px;
+        min-height: 400px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+        .activity-user {
+            font-weight: bold;
+        }
+
+        .activity-time {
+            font-size: 12px;
+        }
+    }
+
+    .storage-card {
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+        .storage-info {
+            text-align: center;
+            margin: 20px 0;
+
+            .storage-text {
+                margin-top: 16px;
+            }
+        }
+    }
+}

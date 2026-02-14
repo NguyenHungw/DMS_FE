@@ -1,0 +1,17 @@
+@use '../variables' as *;
+
+.users-container {
+    .users-title {
+        margin-bottom: 24px;
+    }
+
+    .users-table {
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .user-name {
+            font-weight: 500;
+        }
+    }
+}

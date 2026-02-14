@@ -1,0 +1,89 @@
+@use '../variables' as *;
+
+.documents-container {
+    display: flex;
+    height: calc(100vh - 180px);
+    gap: 24px;
+
+    .folder-sider {
+        width: 260px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        overflow: auto;
+
+        h4 {
+            margin-bottom: 16px;
+            color: $text-secondary;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+    }
+
+    .main-content {
+        flex: 1;
+        overflow: auto;
+
+        .documents-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+
+            h3 {
+                margin: 0;
+            }
+        }
+
+        .search-card {
+            margin-bottom: 24px;
+            border-radius: 12px;
+
+            .search-input {
+                width: 100%;
+                max-width: 400px;
+            }
+        }
+
+        .documents-table {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+
+            .doc-name {
+                font-weight: 500;
+                cursor: pointer;
+                color: $primary-color;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+}
+
+.detail-drawer {
+    .drawer-section {
+        margin-bottom: 24px;
+
+        h4 {
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+    }
+}
+
+.upload-modal-form {
+    .upload-dragger {
+        padding: 24px;
+    }
+
+    .submit-button {
+        width: 100%;
+    }
+}
