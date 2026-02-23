@@ -10,11 +10,13 @@ import {
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDocuments, setPreviewItem, setUploadModalVisible } from '../features/documentSlice';
+import taiLieuApi from '../api/taiLieuApi';
 import DirectorySidebar from '../components/Documents/DirectorySidebar';
 import DocumentSearch from '../components/Documents/DocumentSearch';
 import DocumentTable from '../components/Documents/DocumentTable';
 import DocumentDetailDrawer from '../components/Documents/DocumentDetailDrawer';
 import DocumentUploadModal from '../components/Documents/DocumentUploadModal';
+import DocumentEditModal from '../components/Documents/DocumentEditModal';
 import { getFileIcon } from '../utils/fileUtils';
 import '../styles/pages/Documents.scss';
 
@@ -23,12 +25,30 @@ const { Title, Text } = Typography;
 const Documents = () => {
     const dispatch = useDispatch();
 
-    console.log('check dispatch', dispatch)
     const { previewItem, previewVisible } = useSelector((state) => state.documents);
+    const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.role === 'Administrator';
 
     useEffect(() => {
         dispatch(fetchDocuments());
     }, [dispatch]);
+
+    const handleDownload = async (item) => {
+        if (!item) return;
+        try {
+            const blob = await taiLieuApi.download(item.id);
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', item.tenTaiLieu || 'document');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            // Error handling already handled by axios interceptor or message
+            console.error('Download failed', error);
+        }
+    };
 
     return (
         <div className="documents-container">
@@ -56,7 +76,14 @@ const Documents = () => {
                 open={previewVisible}
                 onCancel={() => dispatch(setPreviewItem(null))}
                 footer={[
-                    <Button key="download" type="primary" icon={<DownloadOutlined />}>Download</Button>,
+                    <Button
+                        key="download"
+                        type="primary"
+                        icon={<DownloadOutlined />}
+                        onClick={() => handleDownload(previewItem)}
+                    >
+                        Download
+                    </Button>,
                     <Button key="close" onClick={() => dispatch(setPreviewItem(null))}>Close</Button>
                 ]}
                 width={800}
@@ -75,6 +102,7 @@ const Documents = () => {
 
             <DocumentDetailDrawer />
             <DocumentUploadModal />
+            <DocumentEditModal />
         </div>
     );
 };

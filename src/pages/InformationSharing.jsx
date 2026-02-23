@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     List,
     Card,
@@ -12,8 +12,11 @@ import {
     Form,
     Input,
     Select,
-    message,
-    Tabs
+    App,
+    Tabs,
+    Spin,
+    Empty,
+    Popconfirm
 } from 'antd';
 import {
     NotificationOutlined,
@@ -22,87 +25,188 @@ import {
     CalendarOutlined,
     TagOutlined,
     CommentOutlined,
-    SendOutlined
+    SendOutlined,
+    ReloadOutlined,
+    DeleteOutlined,
+    PushpinOutlined,
+    PushpinFilled
 } from '@ant-design/icons';
+import { useDispatch, useSelector } from 'react-redux';
+import thongBaoApi from '../api/thongBaoApi';
+import axiosClient from '../api/axiosInstance';
 import '../styles/pages/InformationSharing.scss';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
 const InformationSharing = () => {
+    const { message } = App.useApp();
+    const { user } = useSelector((state) => state.auth);
+    const isAdmin = user?.role === 'Administrator';
+    const [form] = Form.useForm();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [detailVisible, setDetailVisible] = useState(false);
     const [selectedNews, setSelectedNews] = useState(null);
     const [commentText, setCommentText] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [announcements, setAnnouncements] = useState([]);
+    const [categories, setCategories] = useState([]);
 
-    const announcements = [
-        {
-            id: 1,
-            title: 'Company Picnic 2026 - Registration Open',
-            content: 'We are excited to announce our annual company picnic! Please register by the end of this week to join us for a day of fun and team building at Central Park. There will be food, games, and music for everyone. Families are welcome!',
-            author: 'HR Department',
-            date: '2026-02-07',
-            category: 'Event',
-            color: 'blue',
-            comments: [
-                { author: 'Nguyen Van A', content: 'Can we bring pets too?', time: '2 hours ago' },
-                { author: 'Admin', content: 'Yes, Central Park is pet-friendly!', time: '1 hour ago' }
-            ]
-        },
-        {
-            id: 2,
-            title: 'New Security Protocols for Document Sharing',
-            content: 'Starting next Monday, all sensitive documents must be encrypted and shared only through the internal CMS system using the new "Secure" tag. Please attend the training session on Friday at 2 PM.',
-            author: 'IT Security',
-            date: '2026-02-05',
-            category: 'Policy',
-            color: 'red',
-            comments: []
-        },
-        {
-            id: 3,
-            title: 'Q4 Performance Review Schedule',
-            content: 'The review cycle for Q4 will begin on February 15th. Please ensure all self-assessments are submitted by the 12th. Managers will schedule individual meetings through the portal.',
-            author: 'Management',
-            date: '2026-02-01',
-            category: 'Administrative',
-            color: 'green',
-            comments: [
-                { author: 'Le Van C', content: 'Where can I find the self-assessment template?', time: '3 days ago' }
-            ]
-        },
-        {
-            id: 4,
-            title: 'Welcome New Team Members!',
-            content: 'Please join us in welcoming our three new engineers joining the IT department this week. We will have a welcome coffee in the breakroom tomorrow at 10 AM.',
-            author: 'HR Department',
-            date: '2026-02-08',
-            category: 'News',
-            color: 'purple',
-            comments: []
+    const fetchAnnouncements = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await thongBaoApi.getAll();
+            setAnnouncements(data || []);
+        } catch (error) {
+            console.error('Error fetching announcements:', error);
+            message.error('Không thể tải danh sách thông báo');
+        } finally {
+            setLoading(false);
         }
-    ];
+    }, []);
 
-    const showDetail = (item) => {
-        setSelectedNews(item);
-        setDetailVisible(true);
+    const fetchCategories = useCallback(async () => {
+        try {
+            const data = await axiosClient.get('/Lookup/chuyen-muc');
+            setCategories(data || []);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchAnnouncements();
+        fetchCategories();
+    }, [fetchAnnouncements, fetchCategories]);
+
+    const getCategoryColor = (categoryName) => {
+        const colors = {
+            'Event': 'blue',
+            'Policy': 'red',
+            'News': 'purple',
+            'Administrative': 'green',
+            'Internal News': 'purple',
+            'Tech Update': 'cyan'
+        };
+        return colors[categoryName] || 'blue';
     };
 
-    const handleAddComment = () => {
-        if (!commentText.trim()) return;
-        message.success('Comment posted successfully!');
-        setCommentText('');
+    const showDetail = async (item) => {
+        setLoading(true);
+        try {
+            const detail = await thongBaoApi.getById(item.id);
+            setSelectedNews(detail);
+            setDetailVisible(true);
+        } catch (error) {
+            console.error('Error fetching announcement detail:', error);
+            message.error('Không thể tải chi tiết thông báo');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!commentText.trim() || !selectedNews) return;
+
+        setLoading(true);
+        try {
+            await thongBaoApi.postComment(selectedNews.id, commentText);
+            message.success('Đã đăng bình luận thành công!');
+            setCommentText('');
+            // Refresh detail to show new comment
+            const updatedDetail = await thongBaoApi.getById(selectedNews.id);
+            setSelectedNews(updatedDetail);
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            message.error('Không thể đăng bình luận');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        setLoading(true);
+        try {
+            await thongBaoApi.deleteComment(commentId);
+            message.success('Đã xóa bình luận thành công!');
+            // Refresh detail
+            const updatedDetail = await thongBaoApi.getById(selectedNews.id);
+            setSelectedNews(updatedDetail);
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            message.error('Không thể xóa bình luận');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePostAnnouncement = async (values) => {
+        try {
+            setLoading(true);
+            const payload = {
+                tieuDe: values.title,
+                noiDung: values.content,
+                chuyenMucId: values.chuyenMucId,
+                ngayDang: new Date().toISOString()
+            };
+            await thongBaoApi.create(payload);
+            message.success('Đã đăng thông báo thành công!');
+            setIsModalVisible(false);
+            form.resetFields();
+            fetchAnnouncements();
+        } catch (error) {
+            console.error('Error posting announcement:', error);
+            message.error('Không thể đăng thông báo: ' + (error.message || 'Lỗi hệ thống'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTogglePin = async (item, e) => {
+        if (e) e.stopPropagation();
+        try {
+            setLoading(true);
+            await thongBaoApi.togglePin(item.id, !item.isPinned);
+            message.success(item.isPinned ? 'Đã bỏ ghim thông báo' : 'Đã ghim thông báo');
+            fetchAnnouncements();
+        } catch (error) {
+            console.error('Error toggling pin:', error);
+            message.error('Không thể cập nhật trạng thái ghim');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id, e) => {
+        if (!isAdmin) return;
+        if (e) e.stopPropagation();
+        try {
+            setLoading(true);
+            await thongBaoApi.delete(id);
+            message.success('Đã xóa thông báo thành công!');
+            fetchAnnouncements();
+        } catch (error) {
+            console.error('Error deleting announcement:', error);
+            message.error('Không thể xóa thông báo: ' + (error.message || 'Lỗi hệ thống'));
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderAnnouncementList = (category) => {
         const filtered = category === 'All'
             ? announcements
-            : announcements.filter(a => a.category === category || (category === 'News' && a.category === 'Administrative'));
+            : announcements.filter(a => a.tenChuyenMuc === category);
+
+        if (loading && announcements.length === 0) {
+            return <div style={{ textAlign: 'center', padding: '50px' }}><Spin size="large" /></div>;
+        }
 
         return (
             <List
                 grid={{ gutter: 24, xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 3 }}
                 dataSource={filtered}
+                locale={{ emptyText: <Empty description="Không có thông báo nào" /> }}
                 renderItem={(item) => (
                     <List.Item>
                         <Card
@@ -111,23 +215,49 @@ const InformationSharing = () => {
                             onClick={() => showDetail(item)}
                             title={
                                 <Space>
-                                    <Tag color={item.color}>{item.category}</Tag>
-                                    <Text strong>{item.title}</Text>
+                                    <Tag color={getCategoryColor(item.tenChuyenMuc)}>{item.tenChuyenMuc}</Tag>
+                                    <Text strong>{item.tieuDe}</Text>
                                 </Space>
+                            }
+                            extra={
+                                isAdmin && (
+                                    <Space>
+                                        <Button
+                                            type="text"
+                                            icon={item.isPinned ? <PushpinFilled style={{ color: '#1890ff' }} /> : <PushpinOutlined />}
+                                            onClick={(e) => handleTogglePin(item, e)}
+                                        />
+                                        <Popconfirm
+                                            title="Xác nhận xóa thông báo?"
+                                            description="Hành động này không thể hoàn tác."
+                                            onConfirm={(e) => handleDelete(item.id, e)}
+                                            onCancel={(e) => e.stopPropagation()}
+                                            okText="Xóa"
+                                            cancelText="Hủy"
+                                        >
+                                            <Button
+                                                type="text"
+                                                danger
+                                                icon={<DeleteOutlined />}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        </Popconfirm>
+                                    </Space>
+                                )
                             }
                         >
                             <Paragraph ellipsis={{ rows: 3 }}>
-                                {item.content}
+                                {item.noiDung}
                             </Paragraph>
                             <Divider />
                             <div className="card-footer">
                                 <Space>
                                     <Avatar size="small" icon={<UserOutlined />} />
-                                    <Text type="secondary" className="author-info">{item.author}</Text>
+                                    <Text type="secondary" className="author-info">{item.tenTacGia || 'Ẩn danh'}</Text>
                                 </Space>
                                 <Space>
-                                    <CommentOutlined />
-                                    <Text type="secondary" className="date-info">{item.comments.length} Comments</Text>
+                                    <CalendarOutlined />
+                                    <Text type="secondary" className="date-info">{new Date(item.ngayDang).toLocaleDateString()}</Text>
                                 </Space>
                             </div>
                         </Card>
@@ -137,22 +267,22 @@ const InformationSharing = () => {
         );
     };
 
-    const tabItems = [
-        { key: 'All', label: 'All Updates', children: renderAnnouncementList('All') },
-        { key: 'Policy', label: 'Policies', children: renderAnnouncementList('Policy') },
-        { key: 'Event', label: 'Events', children: renderAnnouncementList('Event') },
-        { key: 'News', label: 'Company News', children: renderAnnouncementList('News') },
-    ];
-
-    const pinnedNews = announcements.find(a => a.id === 2); // Example pinned news
+    const pinnedNews = announcements.find(a => a.isPinned);
 
     return (
         <div className="sharing-container">
             <div className="sharing-header">
                 <Title level={3}>Information Sharing</Title>
-                <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setIsModalVisible(true)}>
-                    New Announcement
-                </Button>
+                <Space>
+                    <Button icon={<ReloadOutlined />} onClick={fetchAnnouncements} loading={loading}>
+                        Refresh
+                    </Button>
+                    {isAdmin && (
+                        <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setIsModalVisible(true)}>
+                            New Announcement
+                        </Button>
+                    )}
+                </Space>
             </div>
 
             {pinnedNews && (
@@ -162,17 +292,43 @@ const InformationSharing = () => {
                         className="pinned-card"
                         hoverable
                         onClick={() => showDetail(pinnedNews)}
+                        extra={
+                            isAdmin && (
+                                <Space>
+                                    <Button
+                                        type="text"
+                                        icon={<PushpinFilled style={{ color: '#1890ff' }} />}
+                                        onClick={(e) => handleTogglePin(pinnedNews, e)}
+                                    />
+                                    <Popconfirm
+                                        title="Xác nhận xóa thông báo?"
+                                        description="Hành động này không thể hoàn tác."
+                                        onConfirm={(e) => handleDelete(pinnedNews.id, e)}
+                                        onCancel={(e) => e.stopPropagation()}
+                                        okText="Xóa"
+                                        cancelText="Hủy"
+                                    >
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </Popconfirm>
+                                </Space>
+                            )
+                        }
                     >
                         <Space align="start">
                             <Avatar size="large" icon={<NotificationOutlined />} style={{ backgroundColor: '#1890ff' }} />
                             <div>
                                 <span className="pinned-label">IMPORTANT</span>
-                                <Title level={5} style={{ display: 'inline', margin: 0 }}>{pinnedNews.title}</Title>
+                                <Title level={5} style={{ display: 'inline', margin: 0 }}>{pinnedNews.tieuDe}</Title>
                                 <Paragraph style={{ marginTop: 8 }} ellipsis={{ rows: 2 }}>
-                                    {pinnedNews.content}
+                                    {pinnedNews.noiDung}
                                 </Paragraph>
                                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                                    Posted by {pinnedNews.author} • {pinnedNews.date}
+                                    Posted by {pinnedNews.tenTacGia || 'Ẩn danh'} • {new Date(pinnedNews.ngayDang).toLocaleDateString()}
                                 </Text>
                             </div>
                         </Space>
@@ -180,10 +336,40 @@ const InformationSharing = () => {
                 </div>
             )}
 
-            <Tabs defaultActiveKey="All" items={tabItems} className="sharing-tabs" />
+            <Tabs
+                defaultActiveKey="All"
+                items={[
+                    { key: 'All', label: 'All Updates', children: renderAnnouncementList('All') },
+                    ...categories.map(cat => ({
+                        key: cat.tenChuyenMuc,
+                        label: cat.tenChuyenMuc,
+                        children: renderAnnouncementList(cat.tenChuyenMuc)
+                    }))
+                ]}
+                className="sharing-tabs"
+            />
 
             <Modal
-                title={selectedNews?.title}
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: '24px' }}>
+                        <span>{selectedNews?.tieuDe}</span>
+                        {(isAdmin && selectedNews) && (
+                            <Popconfirm
+                                title="Xác nhận xóa thông báo này?"
+                                onConfirm={() => {
+                                    handleDelete(selectedNews.id);
+                                    setDetailVisible(false);
+                                }}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                            >
+                                <Button type="primary" danger icon={<DeleteOutlined />}>
+                                    Delete Announcement
+                                </Button>
+                            </Popconfirm>
+                        )}
+                    </div>
+                }
                 open={detailVisible}
                 onCancel={() => setDetailVisible(false)}
                 footer={null}
@@ -193,28 +379,43 @@ const InformationSharing = () => {
                 {selectedNews && (
                     <div className="announcement-detail-content">
                         <Space style={{ marginBottom: 16 }}>
-                            <Tag color={selectedNews.color}>{selectedNews.category}</Tag>
-                            <Text type="secondary"><CalendarOutlined /> {selectedNews.date}</Text>
-                            <Text type="secondary"><UserOutlined /> {selectedNews.author}</Text>
+                            <Tag color={getCategoryColor(selectedNews.tenChuyenMuc)}>{selectedNews.tenChuyenMuc}</Tag>
+                            <Text type="secondary"><CalendarOutlined /> {new Date(selectedNews.ngayDang).toLocaleString()}</Text>
+                            <Text type="secondary"><UserOutlined /> {selectedNews.tenTacGia || 'Ẩn danh'}</Text>
                         </Space>
-                        <Title level={4}>{selectedNews.title}</Title>
+                        <Title level={4}>{selectedNews.tieuDe}</Title>
                         <Paragraph style={{ fontSize: '16px', lineHeight: '1.8' }}>
-                            {selectedNews.content}
+                            {selectedNews.noiDung}
                         </Paragraph>
 
                         <Divider />
 
                         <div className="comment-section">
-                            <Title level={5}><CommentOutlined /> Comments ({selectedNews.comments.length})</Title>
+                            <Title level={5}><CommentOutlined /> Comments ({selectedNews.danhSachBinhLuan?.length || 0})</Title>
                             <div className="comment-list">
-                                {selectedNews.comments.length > 0 ? (
-                                    selectedNews.comments.map((c, i) => (
+                                {selectedNews.danhSachBinhLuan && selectedNews.danhSachBinhLuan.length > 0 ? (
+                                    selectedNews.danhSachBinhLuan.map((c, i) => (
                                         <div key={i} style={{ marginBottom: 16, padding: '12px', background: '#f9f9f9', borderRadius: '8px' }}>
                                             <Space align="start">
                                                 <Avatar icon={<UserOutlined />} />
-                                                <div>
-                                                    <Text strong>{c.author}</Text> <Text type="secondary" style={{ fontSize: '12px' }}>{c.time}</Text>
-                                                    <div style={{ marginTop: 4 }}>{c.content}</div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <Space direction="vertical" size={2}>
+                                                            <Text strong>{c.tenNguoiDung}</Text>
+                                                            <Text type="secondary" style={{ fontSize: '11px' }}>{c.thoiGian}</Text>
+                                                        </Space>
+                                                        <Popconfirm
+                                                            title="Xóa bình luận này?"
+                                                            onConfirm={() => handleDeleteComment(c.id)}
+                                                            okText="Xóa"
+                                                            cancelText="Hủy"
+                                                        >
+                                                            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+                                                        </Popconfirm>
+                                                    </div>
+                                                    <div style={{ marginTop: 6, fontSize: '14px', color: '#434343', lineHeight: '1.5' }}>
+                                                        {c.noiDung}
+                                                    </div>
                                                 </div>
                                             </Space>
                                         </div>
@@ -251,23 +452,27 @@ const InformationSharing = () => {
                 footer={null}
                 width={700}
             >
-                <Form className="announcement-modal-form" layout="vertical" onFinish={() => { message.success('Announcement posted!'); setIsModalVisible(false); }}>
-                    <Form.Item label="Title" name="title" rules={[{ required: true }]}>
+                <Form
+                    form={form}
+                    className="announcement-modal-form"
+                    layout="vertical"
+                    onFinish={handlePostAnnouncement}
+                >
+                    <Form.Item label="Title" name="title" rules={[{ required: true, message: 'Vui lòng nhập tiêu đề' }]}>
                         <Input placeholder="Enter title" />
                     </Form.Item>
-                    <Form.Item label="Category" name="category" rules={[{ required: true }]}>
+                    <Form.Item label="Category" name="chuyenMucId" rules={[{ required: true, message: 'Vui lòng chọn chuyên mục' }]}>
                         <Select placeholder="Select category">
-                            <Option value="event">Event</Option>
-                            <Option value="policy">Policy</Option>
-                            <Option value="news">Internal News</Option>
-                            <Option value="tech">Tech Update</Option>
+                            {categories.map(cat => (
+                                <Option key={cat.id} value={cat.id}>{cat.tenChuyenMuc}</Option>
+                            ))}
                         </Select>
                     </Form.Item>
-                    <Form.Item label="Content" name="content" rules={[{ required: true }]}>
+                    <Form.Item label="Content" name="content" rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}>
                         <Input.TextArea rows={6} placeholder="Write your announcement here..." />
                     </Form.Item>
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" className="submit-button" size="large">
+                        <Button type="primary" htmlType="submit" className="submit-button" size="large" loading={loading}>
                             Post Announcement
                         </Button>
                     </Form.Item>

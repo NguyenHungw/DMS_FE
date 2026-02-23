@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Breadcrumb, Avatar, Dropdown, Space, Input, Badge, message, Divider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Layout, Menu, Breadcrumb, Avatar, Dropdown, Space, Input, Badge, Divider, App } from 'antd';
 import {
     FileTextOutlined,
     TeamOutlined,
@@ -12,7 +12,8 @@ import {
     BellOutlined,
     SearchOutlined,
     SettingOutlined,
-    MessageOutlined
+    MessageOutlined,
+    SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,6 +24,7 @@ import '../styles/layouts/MainLayout.scss';
 const { Header, Content, Footer, Sider } = Layout;
 
 const MainLayout = () => {
+    const { message } = App.useApp();
     const { t } = useTranslation();
     const [collapsed, setCollapsed] = useState(false);
     const navigate = useNavigate();
@@ -30,31 +32,42 @@ const MainLayout = () => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
 
+    useEffect(() => {
+        // Dashboard is now available for all roles
+    }, [user, location.pathname, navigate]);
+
     const menuItems = [
         {
             key: '/',
             icon: <DashboardOutlined />,
-            label: 'Dashboard',
+            label: t('dashboard_title'),
         },
         {
             key: '/documents',
             icon: <FileTextOutlined />,
             label: t('doc_mgmt'),
         },
-        // {
-        //     key: '/chat',
-        //     icon: <MessageOutlined />,
-        //     label: t('internal_chat'),
-        // },
         {
             key: '/sharing',
             icon: <NotificationOutlined />,
-            label: 'Information Sharing',
+            label: t('information_sharing'),
         },
         {
             key: '/users',
             icon: <TeamOutlined />,
             label: t('user_mgmt'),
+            roles: ['Administrator'],
+        },
+        {
+            key: '/permissions',
+            icon: <SafetyCertificateOutlined />,
+            label: t('perms_mgmt'),
+            roles: ['Administrator'],
+        },
+        {
+            key: '/chat',
+            icon: <MessageOutlined />,
+            label: t('internal_chat'),
         },
         {
             key: '/settings',
@@ -62,6 +75,11 @@ const MainLayout = () => {
             label: t('settings_title'),
         },
     ];
+
+    const filteredMenuItems = menuItems.filter(item => {
+        if (!item.roles) return true;
+        return item.roles.includes(user?.role);
+    });
 
     const handleLogout = () => {
         dispatch(logout());
@@ -95,7 +113,6 @@ const MainLayout = () => {
             <Header className="cms-header">
                 <div className="header-left">
                     <div className="cms-logo-horizontal">
-                        {/* <FileTextOutlined style={{ fontSize: '24px', color: '#1890ff' }} /> */}
                         <span className="logo-text">CMS SYSTEM</span>
                     </div>
                 </div>
@@ -114,10 +131,14 @@ const MainLayout = () => {
                             <BellOutlined className="header-icon" onClick={() => message.info('You have 5 notifications')} />
                         </Badge>
                         <SettingOutlined className="header-icon" onClick={() => navigate('/settings')} />
-                        <Divider type="vertical" />
+                        <Divider orientation="vertical" />
                         <Dropdown menu={userMenu} placement="bottomRight">
                             <Space className="user-profile">
-                                <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
+                                <Avatar
+                                    style={{ backgroundColor: '#1890ff' }}
+                                    icon={<UserOutlined />}
+                                    src={user?.hinhAnh ? `${import.meta.env.VITE_BASE_URL}${user.hinhAnh}` : null}
+                                />
                                 <span className="user-name">{user?.name || 'Administrator'}</span>
                             </Space>
                         </Dropdown>
@@ -136,24 +157,24 @@ const MainLayout = () => {
                     <Menu
                         mode="inline"
                         selectedKeys={[location.pathname]}
-                        items={menuItems}
+                        items={filteredMenuItems}
                         onClick={({ key }) => navigate(key)}
                         className="cms-menu"
                     />
                 </Sider>
                 <Layout className="cms-content-layout">
                     <Content className="cms-content">
-                        <Breadcrumb className="cms-breadcrumb">
-                            <Breadcrumb.Item>Home</Breadcrumb.Item>
-                            <Breadcrumb.Item>{findLabel(location.pathname)}</Breadcrumb.Item>
-                        </Breadcrumb>
+                        <Breadcrumb
+                            className="cms-breadcrumb"
+                            items={[
+                                { title: 'Home' },
+                                { title: findLabel(location.pathname) }
+                            ]}
+                        />
                         <div className="cms-page-container">
                             <Outlet />
                         </div>
                     </Content>
-                    {/* <Footer className="cms-footer">
-                        Internal CMS System ©2026 Developed with React & Ant Design
-                    </Footer> */}
                 </Layout>
             </Layout>
         </Layout>

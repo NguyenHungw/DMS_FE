@@ -51,16 +51,57 @@ export const createDocument = createAsyncThunk(
     }
 );
 
+export const updateDocument = createAsyncThunk(
+    'documents/update',
+    async ({ id, data }, { dispatch, rejectWithValue }) => {
+        try {
+            const response = await taiLieuApi.update(id, data);
+            dispatch(fetchDocuments());
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || 'Lỗi khi cập nhật tài liệu');
+        }
+    }
+);
+
+export const fetchCategories = createAsyncThunk(
+    'documents/fetchCategories',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await taiLieuApi.getCategories();
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || 'Không thể tải danh mục');
+        }
+    }
+);
+
+export const createCategory = createAsyncThunk(
+    'documents/createCategory',
+    async (data, { dispatch, rejectWithValue }) => {
+        try {
+            const response = await taiLieuApi.createCategory(data);
+            dispatch(fetchCategories());
+            return response;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || 'Lỗi khi tạo danh mục');
+        }
+    }
+);
+
 const initialState = {
     items: [],
+    categories: [],
     selectedItem: null,
     previewItem: null,
     loading: false,
     error: null,
     searchText: '',
+    selectedCategoryId: null,
     previewVisible: false,
     drawerVisible: false,
     uploadModalVisible: false,
+    editModalVisible: false,
 };
 
 const documentSlice = createSlice({
@@ -69,6 +110,9 @@ const documentSlice = createSlice({
     reducers: {
         setSearchText: (state, action) => {
             state.searchText = action.payload;
+        },
+        setCategoryId: (state, action) => {
+            state.selectedCategoryId = action.payload;
         },
         setPreviewItem: (state, action) => {
             state.previewItem = action.payload;
@@ -80,6 +124,9 @@ const documentSlice = createSlice({
         },
         setUploadModalVisible: (state, action) => {
             state.uploadModalVisible = action.payload;
+        },
+        setEditModalVisible: (state, action) => {
+            state.editModalVisible = action.payload;
         },
         setDrawerVisible: (state, action) => {
             state.drawerVisible = action.payload;
@@ -100,6 +147,10 @@ const documentSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload;
             })
+            // Fetch Categories
+            .addCase(fetchCategories.fulfilled, (state, action) => {
+                state.categories = action.payload;
+            })
             // Fetch Detail
             .addCase(fetchDocumentDetail.pending, (state) => {
                 state.loading = false; // Don't block UI for detail load
@@ -111,15 +162,21 @@ const documentSlice = createSlice({
             })
             .addCase(fetchDocumentDetail.rejected, (state, action) => {
                 state.error = action.payload;
+            })
+            // Update
+            .addCase(updateDocument.fulfilled, (state, action) => {
+                state.selectedItem = action.payload;
             });
     },
 });
 
 export const {
     setSearchText,
+    setCategoryId,
     setPreviewItem,
     clearSelectedItem,
     setUploadModalVisible,
+    setEditModalVisible,
     setDrawerVisible
 } = documentSlice.actions;
 

@@ -16,9 +16,13 @@ const taiLieuApi = {
         return axiosClient.get(`/TaiLieu/${id}`);
     },
 
-    // Create new document
-    create: (data) => {
-        return axiosClient.post('/TaiLieu', data);
+    // Create new document (Multi-part for file upload)
+    create: (formData) => {
+        return axiosClient.post('/TaiLieu', formData, {
+            headers: {
+                'Content-Type': undefined,
+            },
+        });
     },
 
     // Delete document
@@ -45,6 +49,34 @@ const taiLieuApi = {
     circulate: (id) => {
         return axiosClient.patch(`/TaiLieu/${id}/ban-hanh`);
     },
+
+    // Get pending documents
+    getPending: () => {
+        return axiosClient.get('/TaiLieu/pending');
+    },
+
+    // Update document metadata
+    update: (id, data) => {
+        return axiosClient.put(`/TaiLieu/${id}`, data);
+    },
+
+    // Download document
+    download: (id) => {
+        return axiosClient.get(`/TaiLieu/${id}/download`, {
+            responseType: 'blob'
+        });
+    },
+
+    // Categories (directories)
+    getCategories: () => {
+        return axiosClient.get('/Lookup/danh-muc'); // Or /DanhMuc if you want to use the CRUD controller
+    },
+    createCategory: (data) => {
+        return axiosClient.post('/DanhMuc', data);
+    },
+    deleteCategory: (id) => {
+        return axiosClient.delete(`/DanhMuc/${id}`);
+    }
 };
 
 export default taiLieuApi;

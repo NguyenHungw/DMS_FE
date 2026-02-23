@@ -25,6 +25,11 @@ const nguoiDungApi = {
     delete: (id) => {
         return axiosClient.delete(`/NguoiDung/${id}`);
     },
+
+    // Assign role to user (Specialized endpoint for safety)
+    updateRole: (id, roleId) => {
+        return axiosClient.patch(`/NguoiDung/${id}/role`, roleId);
+    }
 };
 
 export default nguoiDungApi;

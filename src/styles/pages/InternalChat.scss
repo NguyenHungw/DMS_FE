@@ -1,11 +1,26 @@
 @use '../variables' as *;
 
 .chat-container {
-    //height: calc(100vh - 160px);
+    position: relative;
+    height: 100%;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     overflow: hidden;
+
+    .chat-under-construction {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
     .chat-layout {
         height: 100%;

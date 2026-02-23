@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import { Form, Input, Button, Card, Typography, App } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../features/authSlice';
@@ -9,6 +9,7 @@ import '../styles/pages/Login.scss';
 const { Title } = Typography;
 
 const Login = () => {
+    const { message } = App.useApp();
     const { loading, error } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();

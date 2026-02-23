@@ -1,5 +1,5 @@
 import React from 'react';
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, theme, App as AntdApp } from 'antd';
 import { store } from './features/store';
 import { Provider, useSelector } from 'react-redux';
 import AppRoutes from './routes';
@@ -18,7 +18,9 @@ const ThemedApp = () => {
         },
       }}
     >
-      <AppRoutes />
+      <AntdApp>
+        <AppRoutes />
+      </AntdApp>
     </ConfigProvider>
   );
 };

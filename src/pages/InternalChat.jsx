@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, List, Avatar, Input, Button, Card, Typography, Space, Badge, Divider } from 'antd';
+import { Layout, List, Avatar, Input, Button, Card, Typography, Space, Badge, Divider, Result } from 'antd';
 import { SendOutlined, UserOutlined, SmileOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import '../styles/pages/InternalChat.scss';
@@ -11,7 +11,7 @@ const InternalChat = () => {
     const { user } = useSelector((state) => state.auth);
     const [messages, setMessages] = useState([
         { id: 1, sender: 'Nguyen Van A', text: 'Hi everyone, did you see the new policy update?', time: '10:05 AM', isMe: false },
-        { id: 2, sender: 'Admin', text: 'Yes, it is pinned in the Information Sharing section.', time: '10:08 AM', isMe: true },
+        { id: 2, sender: 'Administrator', text: 'Yes, it is pinned in the Information Sharing section.', time: '10:08 AM', isMe: true },
         { id: 3, sender: 'Tran Thi B', text: 'Thanks! I will check it out now.', time: '10:10 AM', isMe: false },
     ]);
     const [inputValue, setInputValue] = useState('');
@@ -29,7 +29,7 @@ const InternalChat = () => {
         if (!inputValue.trim()) return;
         const newMessage = {
             id: Date.now(),
-            sender: user?.name || 'Admin',
+            sender: user?.name || 'Administrator',
             text: inputValue,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isMe: true
@@ -47,6 +47,18 @@ const InternalChat = () => {
 
     return (
         <div className="chat-container">
+            <div className="chat-under-construction">
+                <Result
+                    status="info"
+                    title="Tính năng đang được phát triển"
+                    subTitle="Trò chuyện nội bộ sẽ sớm ra mắt để giúp đội ngũ kết nối nhanh chóng hơn. Cảm ơn bạn đã kiên nhẫn!"
+                    extra={
+                        <Button type="primary" onClick={() => window.history.back()}>
+                            Quay lại trang chủ
+                        </Button>
+                    }
+                />
+            </div>
             <Layout className="chat-layout">
                 <Sider width={280} theme="light" className="chat-sider">
                     <div className="chat-sider-header">
